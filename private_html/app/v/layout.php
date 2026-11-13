@@ -23,7 +23,7 @@
   </div>
 <?php } ?>
 
-<main>
+<main class="container">
   <?php echo $content; ?>
 </main>
 
@@ -32,12 +32,5 @@
 </footer>
 
 <script src="<?php echo url('js/app.js'); ?>?v=<?php echo APP_VER; ?><?php echo (APP_ENV != 'prod' ? '&t=' . time() : ''); ?>"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    if (typeof App !== 'undefined') {
-      App.init();
-    }
-  });
-</script>
 </body>
 </html>
