@@ -1,51 +1,66 @@
 # Debtlist
 
-Hitelek és rendszeres kiadások egyszerű, személyes listája VC Framework alapon. Verzió: **0.1.0**. PHP 5.3–8.x, MySQL/MariaDu és MySQLi; Composer nélkül.
+Lightweight loan and expense list built on [VC Framework](https://github.com/dsoos1290/vcframework) for PHP 5.3 and newer.
 
-## Funkciók
+Debtlist keeps loans, bills and subscriptions in one per-user list, with configurable billing periods, multi-currency estimates and grouped totals.
 
-- B, P és W; egy tétel egy csoportba tartozik.
-- Havi hitelek: részlet, opcionális havi biztosítás, első esedékesség, részletszám és számított utolsó esedékesség.
-- Heti, havi, negyedéves, féléves és éves rendszeres kiadások, opcionális záródátummal.
-- Alkalmankénti minimum/alap/maximum összeg; üres minimum és maximum esetén az alapösszeg érvényes.
-- HUF, EUR, USD és tetszőleges hárombetűs deviza. Felhasználónként kézzel megadott minimum/alap/maximum HUF-árfolyam; a HUF rögzített értéke 1.
-- Időszaki és havi átlagos minimum/alap/maximum összesítés csoportonként és mindösszesen; 12 időszakos előretekintés.
-- Közös users tábla és a meglévő appokkal kompatibilis munkamenet és jelszóellenőrzés (bcrypt, PuKDF2).
-- Felhasználónként elkülönített tételek és árfolyamok. CSRF-védett módosítások.
+## Features
 
-Nincs befizetéskezelés, tranzakciótörténet vagy automatikus árfolyamletöltés. A módosított összeg és árfolyam minden megtekintett időszakra érvényes.
+* Per-user loan and recurring expense lists with add, edit and delete actions.
+* **B**, **P** and **W** groups, with each entry assigned to one group.
+* Monthly loans with an optional insurance fee, first payment date, installment count and calculated final payment date.
+* Weekly, monthly, quarterly, half-yearly and yearly expenses, with optional end dates.
+* Minimum, base and maximum amounts for each entry; fixed amounts need only a base value.
+* HUF, EUR, USD and other three-letter currency codes, with manually maintained per-user exchange-rate ranges.
+* Configurable billing periods, starting on the 15th by default and ending on the 14th of the following month.
+* Per-group and overall minimum, base and maximum totals for the selected period and monthly average.
+* Twelve-period forecast, actual weekly occurrence counts and automatic handling of expired loans.
+* Shared user accounts with sibling applications, compatible PHP sessions, CSRF protection and flash messages.
+* Responsive desktop and mobile interface.
+* MySQLi, optional database table prefixes, Apache URL rewriting and subdirectory support.
+* No Composer dependency; PHP 5.3+ compatible.
 
-## Telepítés
+## Requirements
 
-1. Másold az appot a többi modul mellé, például a webgyökér debtlist alkönyvtárába. Apache mod_rewrite és AllowOverride szükséges; tartsd meg mindkét .htaccess fájlt. A webes belépési pont a gyökér index.php.
-2. Másold a private_html/app/config/db-sample.php fájlt db.php néven ugyanabba a könyvtárba. A többi appéval azonos adatbázist és Du_PREFIX értéket állíts be. A Du_CHAR legyen utf8mb4.
-3. Futtasd az install.sql fájlt ebben az adatbázisban. Ha használsz Du_PREFIX-et, az SQL-ben minden táblanévhez ugyanazt az előtagot add. Az SQL a meglévő users táblát és fiókokat megtartja; alapértelmezett felhasználót nem hoz létre. Új telepítéshez is a közös felhasználókezelésben kell létrehozni a fiókot.
-4. A PHP MySQLi kiterjesztés szükséges. PHP 5.3 esetén az OpenSSL kiterjesztés (vagy olvasható /dev/urandom) kell a biztonságos CSRF-tokenhez. A private_html/log könyvtár legyen írható.
-5. Éles telepítéskor a private_html/app/config/app.php fájlban állítsd az APP_ENV értékét prod-ra.
-6. Nyisd meg a /debtlist/ címet, lépj be a meglévő fiókkal, add meg az árfolyamokat és a tételeket.
+* PHP 5.3+ with MySQLi.
+* A secure random source: native PHP random bytes, OpenSSL or readable `/dev/urandom`.
+* MySQL or MariaDB with utf8mb4 support.
+* Apache with `mod_rewrite` and `.htaccess` overrides enabled.
+* Writable `private_html/log` directory for error logging.
 
-### Közös belépés
+## Installation
 
-Az azonos users tábla azonos felhasználónevet és jelszót biztosít. Az automatikus átjáráshoz az appoknak azonos gépen/hoston azonos PHP session.name, cookie domain/path és session.save_handler/session.save_path beállítást kell használniuk. A Debtlist a szokásos PHPSESSID sütit és / útvonalat használja; ez a private_html/app/config/debtlist.php fájlban igazítható a többi apphoz. HTTPS esetén az összes appnál állíts be secure session cookie-t a szerveren.
+1. Download the [latest release](https://github.com/sdaniel1335/debtlist/releases/latest) or clone the repository.
+2. Rename `private_html/app/config/db-sample.php` to `private_html/app/config/db.php` and configure the database. Use the same database and table prefix as the sibling applications when sharing accounts.
+3. Import `install.sql` into the configured database. If using `DB_PREFIX`, apply that prefix to all table names in the SQL before importing.
+4. Open the application and sign in with an existing shared account, or `admin` / `admin` on a fresh installation.
+5. **Immediately change the default password** through the shared account management before deployment.
+6. Add exchange rates for any foreign currencies, then create your loans and recurring expenses.
 
-A közös munkamenetben az auth_user_id és auth_username mezőket használjuk, a csatolt appokkal azonosan. A kijelentkezés a közös bejelentkezési állapotot is törli. Más domainen futó appokhoz külön SSO-megoldás szükséges.
+The installer preserves existing users and inserts the default account only if the username does not already exist. Debtlist does not include a password-change page; manage passwords through a sibling application using the same `users` table.
 
-## Számítások
+**Security:** Keep `private_html` inaccessible to direct HTTP requests and set `APP_ENV` to `prod` for deployment.
 
-A private_html/app/config/debtlist.php fájl DEuT_PERIOD_DAY értéke az időszak kezdőnapja (1–28), alapból 15. A 2026-11-15-től induló időszak 2026-12-14-ig tart; a következő 15-e már az új időszakhoz tartozik.
+## Configuration
 
-Heti díjnál az első esedékességtől hét naptári naponként számolunk; az időszakba így négy vagy öt alkalom is eshet. A többi gyakoriság az első esedékesség hónapjához és napjához igazodik. A 29–31. napot rövidebb hónapban a hónap végére igazítjuk, majd visszaáll az eredeti nap. A megadott zárónap még beleszámít.
+* Application settings: `private_html/app/config/app.php` (`APP_URL` is optional).
+* Database settings: `private_html/app/config/db.php` (`DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`, `DB_CHAR`, `DB_TIME`, `DB_PREFIX`). Use `utf8mb4` for `DB_CHAR`.
+* Period settings: `DEBT_PERIOD_DAY` in `private_html/app/config/debtlist.php`, from 1 to 28; default: **15**.
+* Exchange rates: configure minimum, base and maximum HUF values through the authenticated **Árfolyamok** page. HUF is fixed at 1.
+* The interface is currently in Hungarian.
 
-A hitel első esedékessége az első részlet dátuma; az utolsó az első dátum + (részletszám − 1) hónap. A biztosítást minden részlethez azonos devizában hozzáadjuk. A lejárt hitelek a listában maradnak, további költséget nem számolunk rájuk.
+Shared sign-in requires matching PHP session names, cookie paths and domains, and session storage across applications on the same host. Debtlist uses `PHPSESSID`, the `/` cookie path and the shared `auth_user_id` and `auth_username` session fields. Adjust `private_html/app/config/debtlist.php` to match the other applications when needed. Signing out also clears the shared login state.
 
-A havi átlag a kiválasztott időszaktól induló 12 időszak teljes költsége / 12. Kezdődő és közben lejáró tételeket is figyelembe veszünk; ez tervezési átlag, nem kamat- vagy tőketartozás-számítás.
+## Periods and estimates
 
-Minimum = (minimum összeg + biztosítás) × minimum árfolyam × alkalmak száma; az alap és maximum ugyanígy számolódik. Csak a megjelenítéskor kerekítünk egész forintra. A hiányzó árfolyamot nem vesszük nullának: az érintett összesítés helyén figyelmeztetés jelenik meg.
+An entry due on the period's starting day belongs to that period; the next period's starting day is excluded. Weekly expenses are counted every seven calendar days from their first due date. Monthly and less frequent expenses retain the original day where possible, falling back to the last day of shorter months.
 
-## Ellenőrzés
+The monthly average is the total for the twelve periods beginning with the selected period, divided by twelve. It includes entries that start or expire within that range. Loan insurance is added to every installment in the loan's currency.
 
-Futtatás: php tests/run.php. Adatbázis nélkül ellenőrzi az időszakhatárokat, a heti és ritkább ismétlődést, szökőévet, hónapvégi napokat, lejáró hiteleket, biztosítást, devizasávokat és a belépéshez használt segédfüggvényeket.
+Minimum estimates use the minimum amount and exchange rate; maximum estimates use their maximum values. Missing exchange rates are flagged instead of silently treated as zero. Totals are displayed in HUF, rounded only for display.
 
-A php tests/render.php index parancs a valódi nézetet tesztadatokkal HTML-be rendereli, adatbázis nélkül. További módok: empty, missing, item, expense, rates, login. A renderelő csak CLI-ből futtatható, tesztadatot nem ír az adatbázisba.
+Debtlist is a planning list: it does not track completed payments, principal balances or historical amount changes. Editing an amount or exchange rate updates estimates for every viewed period.
 
-A framework és a közös topbar változatlan maradt.
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the release history.
